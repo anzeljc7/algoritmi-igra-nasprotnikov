@@ -286,7 +286,7 @@ int main()
 {
     string inputDir = "input";
     string outputDir = "output";
-    string targetFileName = "primer.txt";
+    string targetFileName = "05.txt";
 
 // KREIRANJE MAPE
 #ifdef _WIN32
