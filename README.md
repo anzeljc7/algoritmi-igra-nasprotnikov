@@ -1,50 +1,81 @@
 # Igra nasprotnika: Konstrukcija največje ortogonalne CC-množice
 
-To je osnovno ogrodje za reševanje problema "Konstrukcija največje ortogonalne CC-množice" v okviru predmeta/tekmovanja Igra nasprotnika. Program prebere graf v obliki matrike sosednosti iz vhodne datoteke, izvede algoritem in zapiše pare vozlišč v izhodno datoteko.
+Ta repozitorij vsebuje rešitev problema **Konstrukcija največje ortogonalne CC-množice**.
+Za podan graf je cilj poiskati čim večjo množico parov sosednjih vozlišč tako, da med vozlišči različnih izbranih parov ni nobene povezave.
 
-## 📁 Struktura projekta
+## Struktura projekta
 
-Za pravilno delovanje programa mora biti struktura map in datotek naslednja:
+Spodaj je prikazana bistvena struktura projekta:
 
-├── main.cpp          # Glavna datoteka s C++ kodo (sem prilepi kodo)
-├── input/            # Mapa z vhodnimi datotekami
-│   └── vhod.txt      # Vhodna datoteka z matriko sosednosti (ime nastaviš v kodi)
-└── output/           # Mapa, ki se ustvari samodejno in vsebuje rešitve
-
-V kodi (v funkciji `main`) je trenutno nastavljeno, da prebere specifično datoteko `vhod.txt` iz mape `input`. Če želiš prebrati drugo datoteko, spremeni vrednost spremenljivke `targetFileName`. Za namen testiranja programske kode si lahko vhodne podatke generirate sami.
-
-## ⚙️ Zahteve za prevajanje
-
-Program za delo z mapami in datotekami uporablja knjižnico `<filesystem>`, ki je del standarda **C++17**. Zato je nujno, da prevajalniku izrecno poveš, naj uporabi ta standard. Pri reševanju lahko sicer uporabite poljubni programski jezik.
-
-## 🚀 Kako zagnati program
-
-### 1. Prevajanje (Kompajliranje)
-Odpri terminal (ali ukazni poziv) v mapi, kjer se nahaja `main.cpp`. Za prevajanje z GCC/G++ uporabi naslednji ukaz:
-
-```bash
-g++ -O3 main.cpp -o cc_mnozica -std=c++17
+```text
+.
+├── solution.cpp
+├── input/
+├── output/
+└── README.md
 ```
 
-Ta ukaz bo ustvaril izvršljivo datoteko z imenom `cc_mnozica`.
+- `solution.cpp` – glavna rešitev
+- `input/` – vhodne datoteke
+- `output/` – izhodne datoteke
 
-### 2. Zagon
-Če je prevajanje uspelo brez napak, program zaženi:
+## Prevajanje
 
-**Na Linux / macOS:**
-
-```bash
-./cc_mnozica
-```
-
-**Na operacijskem sistemu Windows:**
+Program prevedeš z ukazom:
 
 ```bash
-cc_mnozica.exe
+g++ -O3 solution.cpp -o solution -std=c++17
 ```
 
-## 🧠 Razvoj algoritma
+## Zagon
 
-To ogrodje poskrbi za vse branje in pisanje datotek. Vajina naloga je le, da implementirata logiko iskanja največje podmnožice parov v funkcijo `solveOrthogonalCCSet`.
+### Z vhodno datoteko
 
-V tej funkciji velja naslednji pogoj problema: izbrani pari vozlišč morajo biti sosednji, vendar pa nobeno vozlišče iz enega para ne sme biti sosednje z ostalimi vozlišči drugih izbranih parov v podmnožici. Meril se bo čas izvajanja in pravilnost rešitve. Pravilna rešitev ni enolična, različne rešitve z enakim številom parov so vse enako veljavne.
+```bash
+./solution pot/do/vhoda.txt
+```
+
+### Z vhodno in izhodno datoteko
+
+```bash
+./solution pot/do/vhoda.txt pot/do/izhoda.txt
+```
+
+Če izhodne datoteke ne podaš, se rezultat izpiše na standardni izhod.
+Program na koncu izpiše tudi čas izvajanja algoritma.
+
+## Vhodni format
+
+Vhodna datoteka vsebuje:
+
+- v prvi vrstici število vozlišč `n`
+- nato `n` vrstic matrike sosednosti
+
+Primer:
+
+```text
+7
+0 0 1 0 0 0 0
+0 0 0 0 0 1 0
+1 0 0 0 0 0 1
+0 0 0 0 1 0 1
+0 0 0 1 0 0 0
+0 1 0 0 0 0 0
+0 0 1 1 0 0 0
+```
+
+## Izhodni format
+
+Izhod vsebuje:
+
+- v prvi vrstici število najdenih parov
+- nato po en par vozlišč v vsaki vrstici
+
+Primer:
+
+```text
+3
+1 3
+2 6
+4 5
+```
