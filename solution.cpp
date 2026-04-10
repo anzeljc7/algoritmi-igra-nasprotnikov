@@ -451,12 +451,12 @@ int main(int argc, char** argv) {
         }
 
         // Merimo samo čas glavnega algoritma.
-        auto startTime = chrono::steady_clock::now();
+        // auto startTime = chrono::steady_clock::now();
         vector<pair<int, int>> solution = solve_graph(adjacencyMatrix);
-        auto endTime = chrono::steady_clock::now();
+        // auto endTime = chrono::steady_clock::now();
 
-        double elapsedMilliseconds =
-            chrono::duration_cast<chrono::duration<double, milli>>(endTime - startTime).count();
+        // double elapsedMilliseconds =
+        //     chrono::duration_cast<chrono::duration<double, milli>>(endTime - startTime).count();
 
         // argv[2] = izhodna datoteka (če obstaja)
         if (argc >= 3) {
@@ -477,7 +477,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        cout << "Time: " << elapsedMilliseconds << " ms\n";
+        // cout << "Time: " << elapsedMilliseconds << " ms\n";
     } catch (const exception& e) {
         cerr << "Napaka: " << e.what() << '\n';
         return 1;
