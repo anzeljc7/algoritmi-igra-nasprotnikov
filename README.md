@@ -32,13 +32,13 @@ g++ -O3 solution.cpp -o solution -std=c++17
 ### Z vhodno datoteko
 
 ```bash
-./solution pot/do/vhoda.txt
+./solution.exe pot/do/vhoda.txt
 ```
 
 ### Z vhodno in izhodno datoteko
 
 ```bash
-./solution pot/do/vhoda.txt pot/do/izhoda.txt
+./solution.exe pot/do/vhoda.txt pot/do/izhoda.txt
 ```
 
 Če izhodne datoteke ne podaš, se rezultat izpiše na standardni izhod.
