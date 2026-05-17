@@ -1,9 +1,7 @@
 #include <algorithm>
 #include <chrono>
-#include <cctype>
 #include <fstream>
 #include <iostream>
-#include <new>
 #include <queue>
 #include <sstream>
 #include <stdexcept>
@@ -12,12 +10,6 @@
 #include <vector>
 
 using namespace std;
-
-using Matrix = vector<vector<unsigned char>>;
-
-// Zgornja meja je namenoma postavljena pred alokacijo matrike,
-// da neveljavni ali nerealno veliki vhodi ne povzročijo std::bad_alloc.
-static constexpr int MAX_VERTEX_COUNT = 10000;
 
 // ------------------------------------------------------------
 // Problem:
@@ -64,101 +56,71 @@ struct Edge {
     int to;
 };
 
-static string trim_copy(const string& value) {
-    size_t first = 0;
-    while (first < value.size() && isspace((unsigned char)value[first])) {
-        ++first;
-    }
-
-    size_t last = value.size();
-    while (last > first && isspace((unsigned char)value[last - 1])) {
-        --last;
-    }
-
-    return value.substr(first, last - first);
-}
-
 // Prebere eno vrstico matrike sosednosti.
 // Podprta sta oba formata:
 //   0 1 0 1
 //   0101
-// Parser je namenoma strog: dovoljeni sta samo vrednosti 0 in 1.
-static vector<unsigned char> parse_adjacency_row(const string& line, int vertexCount) {
-    vector<unsigned char> row;
+static vector<int> parse_adjacency_row(const string& line, int vertexCount) {
+    vector<int> row;
     row.reserve(vertexCount);
 
     bool containsSeparators = false;
     for (char ch : line) {
-        if (isspace((unsigned char)ch)) {
+        if (ch == ' ' || ch == '\t') {
             containsSeparators = true;
             break;
         }
     }
 
+    // Najprej poskusimo format s presledki.
     if (containsSeparators) {
         stringstream ss(line);
-        string token;
-        while (ss >> token) {
-            if (token != "0" && token != "1") {
-                throw runtime_error("Matrika sosednosti lahko vsebuje samo vrednosti 0 ali 1.");
-            }
-            row.push_back((unsigned char)(token[0] - '0'));
+        int value;
+        while (ss >> value) {
+            row.push_back(value ? 1 : 0);
         }
-
-        if ((int)row.size() != vertexCount) {
-            throw runtime_error("Napacno stevilo vrednosti v vrstici matrike sosednosti.");
+        if ((int)row.size() == vertexCount) {
+            return row;
         }
-
-        return row;
+        row.clear();
     }
 
-    string compact = trim_copy(line);
-    if ((int)compact.size() != vertexCount) {
-        throw runtime_error("Napacno stevilo vrednosti v vrstici matrike sosednosti.");
-    }
-
-    for (char ch : compact) {
-        if (ch != '0' && ch != '1') {
-            throw runtime_error("Matrika sosednosti lahko vsebuje samo vrednosti 0 ali 1.");
+    // Če to ni uspelo, poberemo vse znake 0 in 1 brez ločil.
+    for (char ch : line) {
+        if (ch == '0' || ch == '1') {
+            row.push_back(ch - '0');
         }
-        row.push_back((unsigned char)(ch - '0'));
     }
 
     return row;
 }
 
 // Prebere graf iz podanega vhodnega toka.
-static Matrix read_graph(istream& input) {
-    long long parsedVertexCount;
-    if (!(input >> parsedVertexCount)) {
+static vector<vector<int>> read_graph(istream& input) {
+    int vertexCount;
+    if (!(input >> vertexCount)) {
         throw runtime_error("Manjka stevilo vozlisc.");
     }
-
-    if (parsedVertexCount < 0) {
-        throw runtime_error("Stevilo vozlisc ne sme biti negativno.");
-    }
-
-    if (parsedVertexCount > MAX_VERTEX_COUNT) {
-        throw runtime_error("Stevilo vozlisc je preveliko za varno obdelavo tega programa.");
-    }
-
-    int vertexCount = (int)parsedVertexCount;
 
     string line;
     getline(input, line); // porabimo preostanek prve vrstice
 
-    Matrix adjacencyMatrix(vertexCount, vector<unsigned char>(vertexCount, 0));
+    vector<vector<int>> adjacencyMatrix(vertexCount, vector<int>(vertexCount, 0));
 
     for (int rowIndex = 0; rowIndex < vertexCount; ++rowIndex) {
         do {
             if (!getline(input, line)) {
                 throw runtime_error("Premalo vrstic v vhodu.");
             }
-        } while (trim_copy(line).empty());
+        } while (line.empty());
 
-        vector<unsigned char> row = parse_adjacency_row(line, vertexCount);
+        vector<int> row = parse_adjacency_row(line, vertexCount);
+        if ((int)row.size() != vertexCount) {
+            throw runtime_error("Napacen format matrike sosednosti.");
+        }
+
         for (int colIndex = 0; colIndex < vertexCount; ++colIndex) {
-            adjacencyMatrix[rowIndex][colIndex] = row[colIndex];
+            adjacencyMatrix[rowIndex][colIndex] = row[colIndex] ? 1 : 0;
         }
     }
 
@@ -168,7 +130,7 @@ static Matrix read_graph(istream& input) {
     for (int i = 0; i < vertexCount; ++i) {
         adjacencyMatrix[i][i] = 0;
         for (int j = i + 1; j < vertexCount; ++j) {
-            unsigned char value = (adjacencyMatrix[i][j] || adjacencyMatrix[j][i]) ? 1 : 0;
+            int value = (adjacencyMatrix[i][j] || adjacencyMatrix[j][i]) ? 1 : 0;
             adjacencyMatrix[i][j] = value;
             adjacencyMatrix[j][i] = value;
         }
@@ -339,7 +301,7 @@ private:
 
 // Razbije graf na povezane komponente.
 // To je dobra optimizacija, ker lahko vsako komponento rešujemo ločeno.
-static vector<vector<int>> find_connected_components(const Matrix& adjacencyMatrix) {
+static vector<vector<int>> find_connected_components(const vector<vector<int>>& adjacencyMatrix) {
     int vertexCount = (int)adjacencyMatrix.size();
     vector<int> visited(vertexCount, 0);
     vector<vector<int>> components;
@@ -376,7 +338,7 @@ static vector<vector<int>> find_connected_components(const Matrix& adjacencyMatr
 // Preveri, ali sta dva roba kompatibilna glede na definicijo problema.
 static bool are_compatible(const Edge& firstEdge,
                            const Edge& secondEdge,
-                           const Matrix& adjacencyMatrix) {
+                           const vector<vector<int>>& adjacencyMatrix) {
     // Robova ne smeta deliti krajišča.
     if (firstEdge.from == secondEdge.from ||
         firstEdge.from == secondEdge.to ||
@@ -397,7 +359,7 @@ static bool are_compatible(const Edge& firstEdge,
 }
 
 // Reši eno povezano komponento originalnega grafa.
-static vector<pair<int, int>> solve_component(const Matrix& adjacencyMatrix,
+static vector<pair<int, int>> solve_component(const vector<vector<int>>& adjacencyMatrix,
                                               const vector<int>& componentVertices) {
     vector<int> sortedVertices = componentVertices;
     sort(sortedVertices.begin(), sortedVertices.end());
@@ -456,7 +418,7 @@ static vector<pair<int, int>> solve_component(const Matrix& adjacencyMatrix,
 }
 
 // Reši celoten graf.
-static vector<pair<int, int>> solve_graph(const Matrix& adjacencyMatrix) {
+static vector<pair<int, int>> solve_graph(const vector<vector<int>>& adjacencyMatrix) {
     vector<vector<int>> connectedComponents = find_connected_components(adjacencyMatrix);
     vector<pair<int, int>> result;
 
@@ -474,7 +436,7 @@ int main(int argc, char** argv) {
     cin.tie(nullptr);
 
     try {
-        Matrix adjacencyMatrix;
+        vector<vector<int>> adjacencyMatrix;
 
         // argv[1] = vhodna datoteka (če obstaja)
         if (argc >= 2) {
@@ -516,9 +478,6 @@ int main(int argc, char** argv) {
         }
 
         // cout << "Time: " << elapsedMilliseconds << " ms\n";
-    } catch (const bad_alloc&) {
-        cerr << "Napaka: vhod je prevelik za razpolozljiv pomnilnik.\n";
-        return 1;
     } catch (const exception& e) {
         cerr << "Napaka: " << e.what() << '\n';
         return 1;
