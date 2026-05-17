@@ -15,35 +15,28 @@ using namespace std;
 
 using Matrix = vector<vector<unsigned char>>;
 
-// Zgornja meja je namenoma preverjena pred alokacijo matrike,
-// da neveljavni ali nerealno veliki vhodi ne povzrocijo std::bad_alloc.
+// Zgornja meja je namenoma postavljena pred alokacijo matrike,
+// da neveljavni ali nerealno veliki vhodi ne povzročijo std::bad_alloc.
 static constexpr int MAX_VERTEX_COUNT = 5000;
-
-// Pri vecjih redkih komponentah je pomocni graf kompatibilnosti zelo gost,
-// zato exact max-clique pristop lahko postane eksponentno pocasen.
-// Takrat uporabimo hiter direktni greedy fallback nad originalnim grafom.
-static constexpr int MAX_EXACT_EDGE_COUNT_FOR_SPARSE_COMPONENT = 1200;
-static constexpr int MAX_EXACT_EDGE_COUNT_OVERALL = 15000;
-static constexpr double SPARSE_COMPONENT_DENSITY_LIMIT = 0.25;
 
 // ------------------------------------------------------------
 // Problem:
-// Iz grafa zelimo izbrati najvecjo mnozico robov tako, da:
+// Iz grafa želimo izbrati največjo množico robov tako, da:
 // 1) se izbrani robovi med seboj ne dotikajo,
-// 2) med krajisci razlicnih izbranih robov ni nobene povezave.
+// 2) med krajišči različnih izbranih robov ni nobene povezave.
 //
-// Takšna mnozica robov je najvecja ortogonalna CC-mnozica.
+// Takšna množica robov je največja ortogonalna CC-množica.
 //
-// Ideja exact resitve:
-// - vsak rob originalnega grafa obravnavamo kot vozlisce v pomocnem grafu,
-// - dve taki vozlisci povezemo, ce sta pripadajoca roba kompatibilna,
-// - nato v tem pomocnem grafu poiscemo maksimalno kliko.
+// Ideja rešitve:
+// - vsak rob originalnega grafa obravnavamo kot vozlišče v pomožnem grafu,
+// - dve taki vozlišči povežemo, če sta pripadajoča roba kompatibilna,
+// - nato v tem pomožnem grafu poiščemo maksimalno kliko.
 //
-// Za velike redke komponente uporabimo greedy fallback, ker tam pomocni graf
-// postane gost in branch-and-bound slabo reze veje.
+// Maksimalna klika v pomožnem grafu torej predstavlja največjo množico
+// medsebojno kompatibilnih robov v originalnem grafu.
 // ------------------------------------------------------------
 
-// Dinamicna bitna mnozica za hitro preverjanje sosednosti v pomocnem grafu.
+// Dinamična bitna množica za hitro preverjanje sosednosti v pomožnem grafu.
 struct DynamicBitset {
     vector<unsigned long long> words;
 
@@ -193,20 +186,11 @@ public:
 
     vector<int> solve() {
         bestClique.clear();
-        compute_degrees();
-        build_initial_greedy_clique();
 
         vector<int> candidateVertices(vertexCount);
         for (int i = 0; i < vertexCount; ++i) {
             candidateVertices[i] = i;
         }
-
-        sort(candidateVertices.begin(), candidateVertices.end(), [&](int left, int right) {
-            if (degree[left] != degree[right]) {
-                return degree[left] > degree[right];
-            }
-            return left < right;
-        });
 
         vector<int> currentClique;
         expand(currentClique, candidateVertices);
@@ -217,58 +201,36 @@ public:
     }
 
 private:
-    vector<int> degree;
-
-    void compute_degrees() {
-        degree.assign(vertexCount, 0);
-        for (int i = 0; i < vertexCount; ++i) {
-            int currentDegree = 0;
-            for (unsigned long long word : adjacency[i].words) {
-                currentDegree += __builtin_popcountll(word);
-            }
-            degree[i] = currentDegree;
-        }
-    }
-
-    // Hitro zgradimo zacetno kliko, da branch-and-bound ze na zacetku
-    // dobi uporabno spodnjo mejo in lahko odreze vec vej.
-    void build_initial_greedy_clique() {
-        vector<int> candidates(vertexCount);
-        for (int i = 0; i < vertexCount; ++i) {
-            candidates[i] = i;
+    // Pri dveh enako velikih klikah izberemo leksikografsko manjšo,
+    // da je rezultat vedno enak.
+    bool is_lexicographically_better(const vector<int>& candidateClique,
+                                     const vector<int>& incumbentClique) const {
+        if (incumbentClique.empty()) {
+            return true;
         }
 
-        sort(candidates.begin(), candidates.end(), [&](int left, int right) {
-            if (degree[left] != degree[right]) {
-                return degree[left] > degree[right];
-            }
-            return left < right;
-        });
+        vector<pair<int, int>> candidateEdges;
+        vector<pair<int, int>> incumbentEdges;
+        candidateEdges.reserve(candidateClique.size());
+        incumbentEdges.reserve(incumbentClique.size());
 
-        vector<int> clique;
-        while (!candidates.empty()) {
-            int chosenVertex = candidates.front();
-            clique.push_back(chosenVertex);
-
-            vector<int> nextCandidates;
-            nextCandidates.reserve(candidates.size());
-
-            for (size_t i = 1; i < candidates.size(); ++i) {
-                int candidateVertex = candidates[i];
-                if (adjacency[chosenVertex].test(candidateVertex)) {
-                    nextCandidates.push_back(candidateVertex);
-                }
-            }
-
-            candidates.swap(nextCandidates);
+        for (int edgeId : candidateClique) {
+            candidateEdges.push_back({representedEdges[edgeId].from, representedEdges[edgeId].to});
+        }
+        for (int edgeId : incumbentClique) {
+            incumbentEdges.push_back({representedEdges[edgeId].from, representedEdges[edgeId].to});
         }
 
-        bestClique = clique;
+        sort(candidateEdges.begin(), candidateEdges.end());
+        sort(incumbentEdges.begin(), incumbentEdges.end());
+
+        return lexicographical_compare(candidateEdges.begin(), candidateEdges.end(),
+                                       incumbentEdges.begin(), incumbentEdges.end());
     }
 
     // Pohlepno barvanje kandidatov.
     // Barve uporabimo kot zgornjo mejo za velikost klike,
-    // kar omogoca ucinkovito obrezovanje v branch-and-bound postopku.
+    // kar omogoča učinkovito obrezovanje v branch-and-bound postopku.
     void greedy_color_sort(const vector<int>& candidates,
                            vector<int>& orderedVertices,
                            vector<int>& colorBounds) const {
@@ -280,13 +242,6 @@ private:
         }
 
         vector<int> remaining = candidates;
-        sort(remaining.begin(), remaining.end(), [&](int left, int right) {
-            if (degree[left] != degree[right]) {
-                return degree[left] > degree[right];
-            }
-            return left < right;
-        });
-
         orderedVertices.reserve(candidates.size());
         colorBounds.reserve(candidates.size());
 
@@ -326,9 +281,9 @@ private:
     // Rekurzivni branch-and-bound postopek za iskanje maksimalne klike.
     void expand(vector<int>& currentClique, const vector<int>& candidates) {
         if (candidates.empty()) {
-            // Enako velika resitev za nalogo ni boljša, zato je ne raziskujemo
-            // in ne zamenjujemo trenutne najboljše resitve.
-            if (currentClique.size() > bestClique.size()) {
+            if (currentClique.size() > bestClique.size() ||
+                (currentClique.size() == bestClique.size() &&
+                 is_lexicographically_better(currentClique, bestClique))) {
                 bestClique = currentClique;
             }
             return;
@@ -339,18 +294,17 @@ private:
         greedy_color_sort(candidates, orderedVertices, colorBounds);
 
         for (int i = (int)orderedVertices.size() - 1; i >= 0; --i) {
-            // Ce niti v najboljšem primeru ne moremo izboljšati trenutne resitve,
-            // celotno vejo odrezemo. Uporabimo <=, ker izenacenje ne prinese
-            // boljše ocene pri tej nalogi.
-            if (currentClique.size() + (size_t)colorBounds[i] <= bestClique.size()) {
+            // Če niti v najboljšem primeru ne moremo izboljšati trenutne rešitve,
+            // celotno vejo odrežemo.
+            if (currentClique.size() + (size_t)colorBounds[i] < bestClique.size()) {
                 return;
             }
 
             int chosenVertex = orderedVertices[i];
             currentClique.push_back(chosenVertex);
 
-            // Naslednji kandidati so le sosedi izbranega vozlisca,
-            // saj mora mnozica ostati klika.
+            // Naslednji kandidati so le sosedi izbranega vozlišča,
+            // saj mora množica ostati klika.
             vector<int> nextCandidates;
             nextCandidates.reserve((size_t)i);
 
@@ -384,7 +338,7 @@ private:
 };
 
 // Razbije graf na povezane komponente.
-// To je dobra optimizacija, ker lahko vsako komponento resujemo loceno.
+// To je dobra optimizacija, ker lahko vsako komponento rešujemo ločeno.
 static vector<vector<int>> find_connected_components(const Matrix& adjacencyMatrix) {
     int vertexCount = (int)adjacencyMatrix.size();
     vector<int> visited(vertexCount, 0);
@@ -423,7 +377,7 @@ static vector<vector<int>> find_connected_components(const Matrix& adjacencyMatr
 static bool are_compatible(const Edge& firstEdge,
                            const Edge& secondEdge,
                            const Matrix& adjacencyMatrix) {
-    // Robova ne smeta deliti krajisca.
+    // Robova ne smeta deliti krajišča.
     if (firstEdge.from == secondEdge.from ||
         firstEdge.from == secondEdge.to ||
         firstEdge.to == secondEdge.from ||
@@ -431,7 +385,7 @@ static bool are_compatible(const Edge& firstEdge,
         return false;
     }
 
-    // Med krajisci razlicnih robov ne sme biti nobene povezave.
+    // Med krajišči različnih robov ne sme biti nobene povezave.
     if (adjacencyMatrix[firstEdge.from][secondEdge.from] ||
         adjacencyMatrix[firstEdge.from][secondEdge.to] ||
         adjacencyMatrix[firstEdge.to][secondEdge.from] ||
@@ -440,122 +394,6 @@ static bool are_compatible(const Edge& firstEdge,
     }
 
     return true;
-}
-
-static double compute_component_density(int vertexCount, int edgeCount) {
-    if (vertexCount <= 1) {
-        return 0.0;
-    }
-
-    double possibleEdges = (double)vertexCount * (double)(vertexCount - 1) / 2.0;
-    return edgeCount / possibleEdges;
-}
-
-static bool should_use_greedy_fallback(int componentVertexCount, int edgeCount) {
-    if (edgeCount > MAX_EXACT_EDGE_COUNT_OVERALL) {
-        return true;
-    }
-
-    double density = compute_component_density(componentVertexCount, edgeCount);
-    return density <= SPARSE_COMPONENT_DENSITY_LIMIT &&
-           edgeCount > MAX_EXACT_EDGE_COUNT_FOR_SPARSE_COMPONENT;
-}
-
-// Hiter fallback za velike redke komponente.
-// Rob izberemo tako, da odstrani cim manj razpolozljivih vozlisc
-// iz zaprte soseske N[u] U N[v]. S tem poskusamo pustiti cim vec prostora
-// za naslednje pare. Resitev je vedno veljavna, ni pa nujno optimalna.
-static vector<pair<int, int>> solve_component_greedy_induced_matching(
-    const Matrix& adjacencyMatrix,
-    const vector<int>& sortedVertices,
-    const vector<Edge>& componentEdges
-) {
-    int graphVertexCount = (int)adjacencyMatrix.size();
-    vector<unsigned char> available(graphVertexCount, 0);
-    vector<int> degree(graphVertexCount, 0);
-
-    for (int vertex : sortedVertices) {
-        available[vertex] = 1;
-    }
-
-    for (int vertex : sortedVertices) {
-        int currentDegree = 0;
-        for (int other : sortedVertices) {
-            if (adjacencyMatrix[vertex][other]) {
-                ++currentDegree;
-            }
-        }
-        degree[vertex] = currentDegree;
-    }
-
-    vector<pair<int, int>> result;
-
-    while (true) {
-        int bestU = -1;
-        int bestV = -1;
-        int bestRemovedCount = graphVertexCount + 1;
-        int bestDegreeSum = graphVertexCount * 2 + 1;
-
-        for (const Edge& edge : componentEdges) {
-            int u = edge.from;
-            int v = edge.to;
-
-            if (!available[u] || !available[v]) {
-                continue;
-            }
-
-            int removedCount = 0;
-            for (int x : sortedVertices) {
-                if (!available[x]) {
-                    continue;
-                }
-
-                if (x == u || x == v || adjacencyMatrix[u][x] || adjacencyMatrix[v][x]) {
-                    ++removedCount;
-                }
-            }
-
-            int degreeSum = degree[u] + degree[v];
-            bool better = false;
-
-            if (removedCount < bestRemovedCount) {
-                better = true;
-            } else if (removedCount == bestRemovedCount && degreeSum < bestDegreeSum) {
-                better = true;
-            } else if (removedCount == bestRemovedCount && degreeSum == bestDegreeSum) {
-                if (bestU == -1 || make_pair(u, v) < make_pair(bestU, bestV)) {
-                    better = true;
-                }
-            }
-
-            if (better) {
-                bestRemovedCount = removedCount;
-                bestDegreeSum = degreeSum;
-                bestU = u;
-                bestV = v;
-            }
-        }
-
-        if (bestU == -1) {
-            break;
-        }
-
-        result.push_back({bestU + 1, bestV + 1});
-
-        for (int x : sortedVertices) {
-            if (!available[x]) {
-                continue;
-            }
-
-            if (x == bestU || x == bestV ||
-                adjacencyMatrix[bestU][x] || adjacencyMatrix[bestV][x]) {
-                available[x] = 0;
-            }
-        }
-    }
-
-    sort(result.begin(), result.end());
-    return result;
 }
 
 // Reši eno povezano komponento originalnega grafa.
@@ -586,11 +424,7 @@ static vector<pair<int, int>> solve_component(const Matrix& adjacencyMatrix,
         return {};
     }
 
-    if (should_use_greedy_fallback((int)sortedVertices.size(), edgeCount)) {
-        return solve_component_greedy_induced_matching(adjacencyMatrix, sortedVertices, componentEdges);
-    }
-
-    // Zgradimo pomocni graf kompatibilnosti nad robovi originalnega grafa.
+    // Zgradimo pomožni graf kompatibilnosti nad robovi originalnega grafa.
     MaximumCliqueSolver solver;
     solver.vertexCount = edgeCount;
     solver.representedEdges = componentEdges;
@@ -605,13 +439,13 @@ static vector<pair<int, int>> solve_component(const Matrix& adjacencyMatrix,
         }
     }
 
-    // Maksimalna klika v pomocnem grafu predstavlja iskano exact resitev.
+    // Maksimalna klika v pomožnem grafu predstavlja iskano rešitev.
     vector<int> bestEdgeIds = solver.solve();
 
     vector<pair<int, int>> result;
     result.reserve(bestEdgeIds.size());
 
-    // V izhodu uporabljamo 1-based indeksiranje vozlisc.
+    // V izhodu uporabljamo 1-based indeksiranje vozlišč.
     for (int edgeId : bestEdgeIds) {
         const Edge& edge = componentEdges[edgeId];
         result.push_back({edge.from + 1, edge.to + 1});
@@ -621,7 +455,7 @@ static vector<pair<int, int>> solve_component(const Matrix& adjacencyMatrix,
     return result;
 }
 
-// Resi celoten graf.
+// Reši celoten graf.
 static vector<pair<int, int>> solve_graph(const Matrix& adjacencyMatrix) {
     vector<vector<int>> connectedComponents = find_connected_components(adjacencyMatrix);
     vector<pair<int, int>> result;
@@ -642,7 +476,7 @@ int main(int argc, char** argv) {
     try {
         Matrix adjacencyMatrix;
 
-        // argv[1] = vhodna datoteka, ce obstaja
+        // argv[1] = vhodna datoteka (če obstaja)
         if (argc >= 2) {
             ifstream inputFile(argv[1]);
             if (!inputFile) {
@@ -654,7 +488,7 @@ int main(int argc, char** argv) {
             adjacencyMatrix = read_graph(cin);
         }
 
-        // Merimo samo cas glavnega algoritma.
+        // Merimo samo čas glavnega algoritma.
         // auto startTime = chrono::steady_clock::now();
         vector<pair<int, int>> solution = solve_graph(adjacencyMatrix);
         // auto endTime = chrono::steady_clock::now();
@@ -662,7 +496,7 @@ int main(int argc, char** argv) {
         // double elapsedMilliseconds =
         //     chrono::duration_cast<chrono::duration<double, milli>>(endTime - startTime).count();
 
-        // argv[2] = izhodna datoteka, ce obstaja
+        // argv[2] = izhodna datoteka (če obstaja)
         if (argc >= 3) {
             ofstream outputFile(argv[2]);
             if (!outputFile) {
