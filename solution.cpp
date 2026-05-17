@@ -17,7 +17,7 @@ using Matrix = vector<vector<unsigned char>>;
 
 // Zgornja meja je namenoma postavljena pred alokacijo matrike,
 // da neveljavni ali nerealno veliki vhodi ne povzročijo std::bad_alloc.
-static constexpr int MAX_VERTEX_COUNT = 10000;
+static constexpr int MAX_VERTEX_COUNT = 5000;
 
 // ------------------------------------------------------------
 // Problem:
