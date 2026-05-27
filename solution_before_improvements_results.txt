@@ -1,0 +1,43 @@
+﻿Algoritem : solution_before_improvements
+Datum     : 2026-05-27 23:09:42
+
+Test                                     Cas(ms)   Parov  Veljav.  Pricakovano
+--------------------------------------------------------------------------------
+01                                            58       3  OK       UJEMA (3)
+02                                            33       1  OK       UJEMA (1)
+03                                            32       2  OK       UJEMA (2)
+04                                            25       2  OK       UJEMA (2)
+05                                            31       5  OK       UJEMA (5)
+primer                                        25       3  OK       UJEMA (3)
+test01_path12                                 24       4  OK       UJEMA (4)
+test02_cycle15                                27       5  OK       UJEMA (5)
+test03_star12                                 20       1  OK       UJEMA (1)
+test04_k66                                    21       1  OK       UJEMA (1)
+test05_disjoint_edges25                       19      25  OK       UJEMA (25)
+test06_triangles8                             27       8  OK       UJEMA (8)
+test07_large_path60                           25      20  OK       UJEMA (20)
+test08_large_cycle90                          21      30  OK       UJEMA (30)
+test09_stars20_k1_4                           21      20  OK       UJEMA (20)
+test10_mixed_5K6_5P6                          32      15  OK       UJEMA (15)
+test11_large_path_n500                        31     167  OK       UJEMA (167)
+test12_complete_k50                           28       1  OK       UJEMA (1)
+test13_star_k1_200                            21       1  OK       UJEMA (1)
+test14_disjoint_edges_n300                    32     150  OK       UJEMA (150)
+test15_sparse_n200_p012                       46      16  OK       RAZLIKA  exp=18  dobljeno=16
+test16_medium_n150_p028                    10015       ?  TIMEOUT  RAZLIKA  exp=10  dobljeno=11
+test17_grid_15x15                          10004       ?  TIMEOUT  UJEMA (51)
+test18_petersen                               33       3  OK       UJEMA (3)
+test19_dense_n100_p070                        55       3  OK       UJEMA (3)
+test20_large_sparse_n300_p010                 61      24  OK       UJEMA (24)
+test21_multiple_components                    26      19  OK       UJEMA (19)
+test22_adversarial_medium_n200_p030        10011       ?  TIMEOUT  UJEMA (10)
+test23_cycle_n200                             29      66  OK       UJEMA (66)
+test24_bipartite_random_n100                2820      13  OK       UJEMA (13)
+test25_disjoint_triangles_n60                 28      20  OK       UJEMA (20)
+test26_greedy_trap                            25      10  OK       UJEMA (10)
+test27_large_path_n1000                       56     333  OK       UJEMA (333)
+test28_sparse_n400_p008                      104      29  OK       RAZLIKA  exp=28  dobljeno=29
+
+--------------------------------------------------------------------------------
+Skupni cas  : 33866 ms
+Testov z ref: 31 / 34 ujemajocih
