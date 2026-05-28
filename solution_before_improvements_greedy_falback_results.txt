@@ -1,0 +1,43 @@
+﻿Algoritem : solution_before_improvements_greedy_falback
+Datum     : 2026-05-28 18:23:44
+
+Test                                     Cas(ms)   Parov  Veljav.  Pricakovano
+--------------------------------------------------------------------------------
+01                                            18       3  OK       UJEMA (3)
+02                                            11       1  OK       UJEMA (1)
+03                                            12       2  OK       UJEMA (2)
+04                                            13       2  OK       UJEMA (2)
+05                                            13       5  OK       UJEMA (5)
+primer                                        11       3  OK       UJEMA (3)
+test01_path12                                 15       4  OK       UJEMA (4)
+test02_cycle15                                11       5  OK       UJEMA (5)
+test03_star12                                 13       1  OK       UJEMA (1)
+test04_k66                                    11       1  OK       UJEMA (1)
+test05_disjoint_edges25                       13      25  OK       UJEMA (25)
+test06_triangles8                             11       8  OK       UJEMA (8)
+test07_large_path60                           11      20  OK       UJEMA (20)
+test08_large_cycle90                          12      30  OK       UJEMA (30)
+test09_stars20_k1_4                           11      20  OK       UJEMA (20)
+test10_mixed_5K6_5P6                          12      15  OK       UJEMA (15)
+test11_large_path_n500                       178     167  OK       UJEMA (167)
+test12_complete_k50                           12       1  OK       UJEMA (1)
+test13_star_k1_200                            11       1  OK       UJEMA (1)
+test14_disjoint_edges_n300                    12     150  OK       UJEMA (150)
+test15_sparse_n200_p012                       79      18  OK       UJEMA (18)
+test16_medium_n150_p028                     8036      10  OK       UJEMA (10)
+test17_grid_15x15                             36      51  OK       UJEMA (51)
+test18_petersen                               11       3  OK       UJEMA (3)
+test19_dense_n100_p070                        40       3  OK       UJEMA (3)
+test20_large_sparse_n300_p010                197      24  OK       UJEMA (24)
+test21_multiple_components                    17      19  OK       UJEMA (19)
+test22_adversarial_medium_n200_p030         8071      10  OK       UJEMA (10)
+test23_cycle_n200                             12      66  OK       UJEMA (66)
+test24_bipartite_random_n100                1364      13  OK       UJEMA (13)
+test25_disjoint_triangles_n60                 11      20  OK       UJEMA (20)
+test26_greedy_trap                            14      10  OK       UJEMA (10)
+test27_large_path_n1000                     1249     333  OK       UJEMA (333)
+test28_sparse_n400_p008                      403      28  OK       UJEMA (28)
+
+--------------------------------------------------------------------------------
+Skupni cas  : 19951 ms
+Testov z ref: 34 / 34 ujemajocih
